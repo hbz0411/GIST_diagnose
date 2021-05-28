@@ -1,0 +1,119 @@
+setwd("...")
+library(tidyverse)
+library(Matrix)
+library(xgboost)
+library(magrittr)
+library(ElemStatLearn)
+library(caret)
+
+data_full <- read.csv("data_full_s.csv",header = TRUE)
+
+set.seed(1234)
+ind <- sample(2, nrow(data_full), replace = T, prob = c(0.75, 0.25))
+bst.train <- data_full[ind == 1,]
+bst.test <- data_full[ind == 2,]
+
+model_martix_train <- model.matrix(GIST~.-1, bst.train)
+model_martix_test <- model.matrix(GIST~.-1, bst.test)
+data_train <- xgb.DMatrix(model_martix_train, label = bst.train$GIST)
+data_test <- xgb.DMatrix(model_martix_test, label = bst.test$GIST)
+
+grid = expand.grid(
+        nrounds = c(75, 100, 200), 
+        colsample_bytree = 1, 
+        min_child_weight = 1, 
+        eta = c(0.01, 0.1, 0.3, 1), 
+        gamma = c(0.5, 0.25), 
+        subsample = 0.5, 
+        max_depth = c(2, 3)
+)
+cntrl = trainControl(
+        method = "cv", 
+        number = 5, 
+        verboseIter = TRUE, 
+        returnData = FALSE, 
+        returnResamp = "final"
+)
+set.seed(1)
+train.xgb = train(
+        x = data_full[, 2:7], 
+        y = data_full[, 1], 
+        trControl = cntrl, 
+        tuneGrid = grid, 
+        method = "xgbTree"
+)
+train.xgb$bestTune
+
+param <- list(max_depth = 2, eta = 0.01, silent = 1, 
+              nthread = 2, gamma = 0.25,
+              objective = "reg:linear", eva_metric = "auc")
+try_xgb_model <- xgb.train(param, data_train, nrounds = 200) 
+
+pre_xgb <- round(predict(try_xgb_model,newdata = data_test))
+(AC <- table(bst.test$GIST, pre_xgb,dnn=c("true","pre")))
+(Accurcy <- (AC[1,1]+AC[2,2])/sum(AC))
+
+imp <- xgb.importance(colnames(data_train), model = try_xgb_model)
+print(imp)
+xgb.ggplot.importance(imp)
+
+library(DALEX)
+explainer_xgb <-explain(try_xgb_model, 
+                        data = model_martix_train, 
+                        y = bst.train$GIST, 
+                        label = "xgboost")
+explainer_xgb
+
+CTV_xgb_model_effect <- variable_effect(explainer_xgb, 
+                                        variable = "CT.Value", 
+                                        type = "partial_dependency")
+head(CTV_xgb_model_effect)
+plot(CTV_xgb_model_effect)
+
+LQA_xgb_model_effect <- variable_effect(explainer_xgb, 
+                                        variable = "Liquid.Area", 
+                                        type = "partial_dependency")
+head(LQA_xgb_model_effect)
+plot(LQA_xgb_model_effect)
+
+LPC_xgb_model_effect <- variable_effect(explainer_xgb, 
+                                        variable = "Lymphcte.Count", 
+                                        type = "partial_dependency")
+head(LPC_xgb_model_effect)
+plot(LPC_xgb_model_effect)
+
+LSR_xgb_model_effect <- variable_effect(explainer_xgb, 
+                                        variable = "DiameterLong.Short", 
+                                        type = "partial_dependency")
+head(LSR_xgb_model_effect)
+plot(LSR_xgb_model_effect)
+
+HGE_xgb_model_effect <- variable_effect(explainer_xgb, 
+                                        variable = "HomogeneouslyEnhanced", 
+                                        type = "partial_dependency")
+head(HGE_xgb_model_effect)
+plot(HGE_xgb_model_effect)
+
+ULC_xgb_model_effect <- variable_effect(explainer_xgb, 
+                                        variable = "UlcerOnTheSurface", 
+                                        type = "partial_dependency")
+head(ULC_xgb_model_effect)
+plot(ULC_xgb_model_effect)
+
+truedata <- read.csv(file = "truedata.csv", header = T)
+truedataMatrix <-  model.matrix(GIST~.-1, truedata)
+nobs <- truedataMatrix[1, , drop = FALSE]
+sp_xgb <- predict_parts_break_down(explainer_xgb, new_observation = nobs)
+plot(sp_xgb)
+
+library(Hmisc)
+x.test <- as.matrix(bst.test[, 2:7])
+fp <- predict(try_xgb_model, x.test)
+cindex.orig=rcorr.cens(fp,y.test) [[1]]
+cindex.orig
+
+library(InformationValue)
+xg.testMat <- as.matrix(bst.test[,2:7])
+xg.xg.test <- predict(try_xgb_model, rf.testMat)
+y.test <- bst.test[, 1]
+plotROC(y.test, xg.xg.test)
