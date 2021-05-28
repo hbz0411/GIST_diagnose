@@ -1,0 +1,21 @@
+library(glmnet)
+data_full <- read.csv("data_full.csv",header = TRUE)
+y <- as.matrix(data_full[,1])
+x <- as.matrix(data_full[,2:25])
+f1 = glmnet(x, y, family = "binomial", nlambda = 100, alpha = 1)
+print(f1)
+plot(f1,xvar = "lambda", label = T)
+
+predict(f1, newx = x[2:50,], type = "response")
+cvfit = cv.glmnet(x,y)
+plot(cvfit)
+
+cvfit$lambda.min
+cvfit$lambda.1se
+
+l.coef1 <- coef(cvfit$glmnet.fit, s = cvfit$lambda.min, exact = F)
+l.coef1
+log(cvfit$lambda.min)
+l.coef2 <- coef(cvfit$glmnet.fit, s = cvfit$lambda.1se, exact = F)
+l.coef2
+log(cvfit$lambda.min)
