@@ -1,0 +1,11 @@
+library(corrplot)
+setwd("...")
+data_full <- read.csv("data_full_s.csv",header = TRUE)
+data <- as.matrix(data_full[, -1])
+cor(data)
+
+library(corrgram)
+corrgram(data, order = FALSE, lower.panel = panel.shade, 
+        upper.panel = panel.pie, text.panel = panel.txt, 
+        diag.panel = panel.minmax, 
+        main = "Correlation Plot of the Diagnostic Predictors of GIST")
