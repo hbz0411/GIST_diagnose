@@ -1,3 +1,4 @@
+setwd("...")
 library(glmnet)
 data_full <- read.csv("data_full.csv",header = TRUE)
 y <- as.matrix(data_full[,1])
