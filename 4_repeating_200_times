@@ -19,6 +19,7 @@ RC <- c(1:200) #Recall
 FS <- c(1:200) #F1-score
 CI <- c(1:200) #C-index
 
+#rebuild and validate the model 200 times
 while (i <= 200) {
   set.seed(as.numeric(i))
   ind <- sample(2, nrow(data_full), replace = T, prob = c(0.75, 0.25))
@@ -52,6 +53,7 @@ while (i <= 200) {
   i <- i + 1
 }
 
+#write the results in the ".csv" tables
 CIt <- as.table(CI, nrow = 200)
 ACt <- as.table(AC, nrow = 200)
 PCt <- as.table(PC, nrow = 200)
