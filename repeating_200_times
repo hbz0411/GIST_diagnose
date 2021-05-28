@@ -1,0 +1,64 @@
+setwd("...")
+library(tidyverse)
+library(Matrix)
+library(xgboost)
+library(magrittr)
+library(ElemStatLearn)
+library(caret)
+library(InformationValue)
+library(Hmisc)
+data_full <- read.csv("data_full_s.csv",header = TRUE)
+
+param <- list(max_depth = 2, eta = 0.01, silent = 1, 
+              nthread = 2, gamma = 0.25,
+              objective = "reg:linear", eva_metric = "auc")
+i <- 1
+AC <- c(1:200) #Accuracy
+PC <- c(1:200) #Precision
+RC <- c(1:200) #Recall
+FS <- c(1:200) #F1-score
+CI <- c(1:200) #C-index
+
+while (i <= 200) {
+  set.seed(as.numeric(i))
+  ind <- sample(2, nrow(data_full), replace = T, prob = c(0.75, 0.25))
+  bst.train <- data_full[ind == 1,]
+  bst.test <- data_full[ind == 2,]
+  
+  model_martix_train <- model.matrix(GIST~.-1, bst.train)
+  model_martix_test <- model.matrix(GIST~.-1, bst.test)
+  data_train <- xgb.DMatrix(model_martix_train, label = bst.train$GIST)
+  data_test <- xgb.DMatrix(model_martix_test, label = bst.test$GIST)
+  
+  try_xgb_model <- xgb.train(param, data_train, nrounds = 200)
+  
+  x <- as.matrix(bst.train[, 2:7])
+  y <- as.matrix(bst.train[, 1])
+  pred <- predict(try_xgb_model, x)
+  optimalCutoff(y, pred)
+  rf.testMat <- as.matrix(bst.test[,2:7])
+  rf.rf.test <- predict(try_xgb_model, rf.testMat)
+  y.test <- bst.test[, 1]
+  TT <- confusionMatrix(y.test, rf.rf.test, threshold = optimalCutoff(y, pred))
+  AC[i] <- (TT[1,1]+TT[2,2])/sum(TT)
+  PC[i] <- TT[2,2]/sum(TT[2, ])
+  RC[i] <- TT[2,2]/sum(TT[ ,2])
+  FS[i] <- sqrt(PC[i]*RC[i])
+  
+  x.test <- as.matrix(bst.test[, 2:7])
+  fp <- predict(try_xgb_model, x.test)
+  CI[i] <- rcorr.cens(fp,y.test) [[1]]
+  
+  i <- i + 1
+}
+
+CIt <- as.table(CI, nrow = 200)
+ACt <- as.table(AC, nrow = 200)
+PCt <- as.table(PC, nrow = 200)
+RCt <- as.table(RC, nrow = 200)
+FSt <- as.table(FS, nrow = 200)
+write.csv(CIt, file = "C_index.csv")
+write.csv(ACt, file = "Accurcy.csv")
+write.csv(PCt, file = "Precision.csv")
+write.csv(RCt, file = "Recall.csv")
+write.csv(FSt, file = "F1_score.csv")
