@@ -18,5 +18,3 @@ After that, you can click the button "Run API" and use the model
 click" try it out" to input the data.
 
 Here, 1 means Yes and 0 means No. 
-
-Lymphcyte count is calculated by ×10^9/L. For example, if one's lymphcyte is 1.3×10^9/L, you just need to input "1.3". 
