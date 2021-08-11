@@ -7,7 +7,7 @@ library(ElemStatLearn)
 library(caret)
 
 #prepare the library and the data
-data_full <- read.csv("data_full_s.csv",header = TRUE)
+data_full <- read.csv("data.csv",header = TRUE)
 
 #devided the data to two groups (train & test)
 set.seed(1234)
@@ -49,8 +49,8 @@ train.xgb = train(
 train.xgb$bestTune
 
 #set the best parameter and train the model
-param <- list(max_depth = 2, eta = 0.01, silent = 1, 
-              nthread = 2, gamma = 0.25,
+param <- list(max_depth = 2, eta = 0.1, silent = 1, 
+              nthread = 2, gamma = 0.5,
               objective = "reg:linear", eva_metric = "auc")
 try_xgb_model <- xgb.train(param, data_train, nrounds = 200) 
 
@@ -81,23 +81,23 @@ CTV_xgb_model_effect <- variable_effect(explainer_xgb,
 head(CTV_xgb_model_effect)
 plot(CTV_xgb_model_effect)
 
-LQA_xgb_model_effect <- variable_effect(explainer_xgb, 
-                                        variable = "Liquid.Area", 
+APE_xgb_model_effect <- variable_effect(explainer_xgb, 
+                                        variable = "Arterial.Phase.Enhancement", 
                                         type = "partial_dependency")
-head(LQA_xgb_model_effect)
-plot(LQA_xgb_model_effect)
+head(APE_xgb_model_effect)
+plot(APE_xgb_model_effect)
 
-LPC_xgb_model_effect <- variable_effect(explainer_xgb, 
-                                        variable = "Lymphcte.Count", 
+VPE_xgb_model_effect <- variable_effect(explainer_xgb, 
+                                        variable = "Venous.Phase.Enhancement", 
                                         type = "partial_dependency")
-head(LPC_xgb_model_effect)
-plot(LPC_xgb_model_effect)
+head(VPE_xgb_model_effect)
+plot(VPE_xgb_model_effect)
 
-LSR_xgb_model_effect <- variable_effect(explainer_xgb, 
-                                        variable = "DiameterLong.Short", 
+LSD_xgb_model_effect <- variable_effect(explainer_xgb, 
+                                        variable = "Long.Short.Diameter", 
                                         type = "partial_dependency")
-head(LSR_xgb_model_effect)
-plot(LSR_xgb_model_effect)
+head(LSD_xgb_model_effect)
+plot(LSD_xgb_model_effect)
 
 HGE_xgb_model_effect <- variable_effect(explainer_xgb, 
                                         variable = "HomogeneouslyEnhanced", 
@@ -105,18 +105,11 @@ HGE_xgb_model_effect <- variable_effect(explainer_xgb,
 head(HGE_xgb_model_effect)
 plot(HGE_xgb_model_effect)
 
-ULC_xgb_model_effect <- variable_effect(explainer_xgb, 
-                                        variable = "UlcerOnTheSurface", 
+CAL_xgb_model_effect <- variable_effect(explainer_xgb, 
+                                        variable = "Calcification", 
                                         type = "partial_dependency")
-head(ULC_xgb_model_effect)
-plot(ULC_xgb_model_effect)
-
-#read a new patient data and make a prediction
-truedata <- read.csv(file = "truedata.csv", header = T)
-truedataMatrix <-  model.matrix(GIST~.-1, truedata)
-nobs <- truedataMatrix[1, , drop = FALSE]
-sp_xgb <- predict_parts_break_down(explainer_xgb, new_observation = nobs)
-plot(sp_xgb)
+head(CAL_xgb_model_effect)
+plot(CAL_xgb_model_effect)
 
 #use Hmisc package to calculate C-index
 library(Hmisc)
