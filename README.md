@@ -1,9 +1,9 @@
 # GIST_diagnose
-xgboost model for GIST diagnosis
+XGBoost model for GIST diagnosis
 
 Download the ZIP file and unfold it.
 
-open the R file named "model for use.R" with Rstudio version 4.0 or higher. 
+Open the R file named "model for use.R" with Rstudio version 4.0 or higher. 
 
 Install the packages needed which have been listed on the top.
 
