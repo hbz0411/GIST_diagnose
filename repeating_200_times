@@ -7,10 +7,10 @@ library(ElemStatLearn)
 library(caret)
 library(InformationValue)
 library(Hmisc)
-data_full <- read.csv("data_full_s.csv",header = TRUE)
+data_full <- read.csv("data.csv",header = TRUE)
 
-param <- list(max_depth = 2, eta = 0.01, silent = 1, 
-              nthread = 2, gamma = 0.25,
+param <- list(max_depth = 2, eta = 0.1, silent = 1, 
+              nthread = 2, gamma = 0.5,
               objective = "reg:linear", eva_metric = "auc")
 i <- 1
 AC <- c(1:200) #Accuracy
